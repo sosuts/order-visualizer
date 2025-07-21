@@ -1,0 +1,8 @@
+H|\^&|||LIS^Laboratory Information System|||||||P|E 1394-97|20231201120000
+P|1||12345||Smith^John^A||19850315|M|||123 Main St^Any City^CA^90210|||||||||||||||||||||
+O|1|ORD123|12345^001|^^^CBC^Complete Blood Count^L||R|20231201120000|||||A||||||||||F||||||||
+R|1|^^^WBC^White Blood Cell Count^L||7.2|10*3/uL|4.0-10.0|N|||F|||20231201150000
+R|2|^^^RBC^Red Blood Cell Count^L||4.8|10*6/uL|4.2-5.4|N|||F|||20231201150000
+R|3|^^^HGB^Hemoglobin^L||14.2|g/dL|12.0-16.0|N|||F|||20231201150000
+R|4|^^^HCT^Hematocrit^L||42.1|%|37.0-47.0|N|||F|||20231201150000
+L|1|N

@@ -1,0 +1,17 @@
+{
+  "name": "medical-order-format-editor",
+  "version": "1.0.0",
+  "description": "Client-side medical test order format editor for ASTM and HL7 standards",
+  "main": "public/index.html",
+  "scripts": {
+    "serve": "python3 -m http.server 8000 --directory public",
+    "build": "echo 'Static site - no build required'",
+    "test": "echo 'No tests configured'",
+    "lint": "echo 'No linting configured'"
+  },
+  "keywords": ["medical", "ASTM", "HL7", "parser", "healthcare", "laboratory", "client-side"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
