@@ -10,8 +10,20 @@
 </head>
 <body>
     <header>
-        <h1>🧪 Medical Order Format Editor</h1>
-        <p>ASTM・HL7検査オーダーフォーマットの構文解析・編集ツール</p>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>🧪 <span data-i18n="app.title">Medical Order Format Editor</span></h1>
+                <p data-i18n="app.subtitle">ASTM・HL7検査オーダーフォーマットの構文解析・編集ツール</p>
+            </div>
+            <div class="header-controls">
+                <div class="language-toggle">
+                    <button id="language-toggle" type="button" class="language-btn" aria-label="言語切り替え" title="言語切り替え">
+                        <span class="language-icon">🌐</span>
+                        <span class="language-text" data-i18n="language.current">日本語</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <main>
@@ -23,24 +35,25 @@
                 </div>
                 
                 <select id="format-selector" aria-label="フォーマット選択">
-                    <option value="auto">自動判定</option>
-                    <option value="astm">ASTM E1394</option>
-                    <option value="hl7">HL7 v2.x</option>
+                    <option value="auto" data-i18n="input.format.auto">自動判定</option>
+                    <option value="astm" data-i18n="input.format.astm">ASTM E1394</option>
+                    <option value="hl7" data-i18n="input.format.hl7">HL7 v2.x</option>
                 </select>
                 
                 <textarea id="order-input" 
                     placeholder="検査オーダーデータを入力してください...&#10;&#10;例 (ASTM):&#10;H|\^&|||LIS|||||||P|E 1394-97|20231201120000&#10;P|1||12345||Smith^John^A||19850315|M...&#10;&#10;例 (HL7):&#10;MSH|^~\&|LIS|HOSPITAL|LAB|HOSPITAL|20231201120000...&#10;PID|1||12345^^^HOSPITAL^MR||Smith^John^A...&#10;&#10;Ctrl + Enter で解析実行"
                     aria-label="検査オーダーデータ入力"
+                    data-i18n-placeholder="input.placeholder"
                 ></textarea>
                 
                 <div class="controls">
-                    <button id="parse-btn" type="button" aria-label="構文解析実行">
+                    <button id="parse-btn" type="button" aria-label="構文解析実行" data-i18n="button.parse">
                         ⚡ 構文解析
                     </button>
-                    <button id="clear-btn" type="button" aria-label="入力クリア">
+                    <button id="clear-btn" type="button" aria-label="入力クリア" data-i18n="button.clear">
                         🗑️ クリア
                     </button>
-                    <button id="load-template" type="button" aria-label="テンプレート読み込み">
+                    <button id="load-template" type="button" aria-label="テンプレート読み込み" data-i18n="button.template">
                         📋 テンプレート
                     </button>
                 </div>
@@ -53,13 +66,13 @@
                 </div>
                 
                 <div class="tabs" role="tablist" aria-label="解析結果表示形式">
-                    <button class="tab-btn active" data-tab="table" role="tab" aria-selected="true" aria-controls="table-view">
+                    <button class="tab-btn active" data-tab="table" role="tab" aria-selected="true" aria-controls="table-view" data-i18n="tab.table">
                         📋 表形式
                     </button>
-                    <button class="tab-btn" data-tab="json" role="tab" aria-selected="false" aria-controls="json-view">
+                    <button class="tab-btn" data-tab="json" role="tab" aria-selected="false" aria-controls="json-view" data-i18n="tab.json">
                         🔗 JSON
                     </button>
-                    <button class="tab-btn" data-tab="tree" role="tab" aria-selected="false" aria-controls="tree-view">
+                    <button class="tab-btn" data-tab="tree" role="tab" aria-selected="false" aria-controls="tree-view" data-i18n="tab.tree">
                         🌳 構文木
                     </button>
                 </div>
@@ -77,10 +90,10 @@
                 </div>
                 
                 <div class="export-controls">
-                    <button id="export-json" type="button" aria-label="JSON形式でエクスポート">
+                    <button id="export-json" type="button" aria-label="JSON形式でエクスポート" data-i18n="button.export.json">
                         💾 JSON出力
                     </button>
-                    <button id="export-text" type="button" aria-label="テキスト形式でエクスポート">
+                    <button id="export-text" type="button" aria-label="テキスト形式でエクスポート" data-i18n="button.export.text">
                         📄 テキスト出力
                     </button>
                 </div>

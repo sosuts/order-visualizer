@@ -3,6 +3,8 @@ class MedicalOrderEditor {
         try {
             this.currentResult = null;
             this.parser = new MedicalFormatParser();
+            this.currentLanguage = localStorage.getItem('language') || 'ja';
+            this.translations = this.getTranslations();
             this.init();
         } catch (error) {
             console.error('Constructor error:', error);
@@ -13,6 +15,7 @@ class MedicalOrderEditor {
     init() {
         try {
             this.bindEvents();
+            this.updateUI();
             this.showWelcomeMessage();
         } catch (error) {
             console.error('Initialization error:', error);
@@ -33,6 +36,8 @@ class MedicalOrderEditor {
         });
 
         document.getElementById('order-input').addEventListener('input', () => this.autoDetectFormat());
+        
+        document.getElementById('language-toggle').addEventListener('click', () => this.toggleLanguage());
         
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'Enter') {
@@ -55,16 +60,17 @@ class MedicalOrderEditor {
     showWelcomeMessage() {
         const container = document.querySelector('#table-view');
         if (container) {
+            const translations = this.translations[this.currentLanguage];
+            const shortcutText = this.currentLanguage === 'ja' ? 'で解析実行' : 'to parse';
             container.innerHTML = `
                 <div class="welcome-message">
                     <div class="emoji">👋</div>
-                    <div class="title">検査オーダーフォーマットエディタへようこそ</div>
+                    <div class="title">${translations['welcome.title']}</div>
                     <div class="description">
-                        ASTMまたはHL7フォーマットのデータを入力して「構文解析」ボタンを押してください<br>
-                        テンプレートを使用して簡単に開始することもできます
+                        ${translations['welcome.description']}
                     </div>
                     <div class="shortcut">Ctrl + Enter</div>
-                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">で解析実行</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">${shortcutText}</div>
                 </div>
             `;
         }
@@ -75,7 +81,7 @@ class MedicalOrderEditor {
         const format = document.getElementById('format-selector').value;
         
         if (!input) {
-            this.showError('入力データが空です。ASTMまたはHL7フォーマットのデータを入力してください。');
+            this.showError(this.translations[this.currentLanguage]['error.empty']);
             return;
         }
 
@@ -100,7 +106,7 @@ class MedicalOrderEditor {
             
         } catch (error) {
             console.error('Parse error:', error);
-            this.showError(`解析エラー: ${error.message}`);
+            this.showError(`${this.translations[this.currentLanguage]['error.parse']}: ${error.message}`);
         }
     }
 
@@ -138,11 +144,11 @@ class MedicalOrderEditor {
             <div class="summary-stats">
                 <div class="stat-item">
                     <span class="stat-number">${segments.length}</span>
-                    <span class="stat-label">セグメント</span>
+                    <span class="stat-label">${this.translations[this.currentLanguage]['stats.segments']}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">${displayData.length}</span>
-                    <span class="stat-label">フィールド</span>
+                    <span class="stat-label">${this.translations[this.currentLanguage]['stats.fields']}</span>
                 </div>
             </div>
         `;
@@ -188,7 +194,7 @@ class MedicalOrderEditor {
                             <span class="segment-line">Line ${segment.lineNumber}</span>
                         </div>
                         <div class="segment-meta">
-                            <span class="field-count">${segment.fields.length} フィールド</span>
+                            <span class="field-count">${segment.fields.length} ${this.translations[this.currentLanguage]['segment.fields']}</span>
                         </div>
                     </div>
                     <div class="collapse-icon" aria-hidden="true">
@@ -273,13 +279,16 @@ class MedicalOrderEditor {
         // Add expand/collapse all buttons
         const tableView = document.querySelector('#table-view');
         if (tableView) {
+            const expandText = this.currentLanguage === 'ja' ? '📂 すべて展開' : '📂 Expand All';
+            const collapseText = this.currentLanguage === 'ja' ? '📁 すべて折りたたむ' : '📁 Collapse All';
+            
             const controlsHtml = `
                 <div class="table-controls">
                     <button class="control-btn" id="expand-all" type="button">
-                        📂 すべて展開
+                        ${expandText}
                     </button>
                     <button class="control-btn" id="collapse-all" type="button">
-                        📁 すべて折りたたむ
+                        ${collapseText}
                     </button>
                 </div>
             `;
@@ -779,6 +788,93 @@ class MedicalOrderEditor {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    getTranslations() {
+        return {
+            ja: {
+                'app.title': 'Medical Order Format Editor',
+                'app.subtitle': 'ASTM・HL7検査オーダーフォーマットの構文解析・編集ツール',
+                'language.current': '日本語',
+                'input.format.auto': '自動判定',
+                'input.format.astm': 'ASTM E1394',
+                'input.format.hl7': 'HL7 v2.x',
+                'input.placeholder': '検査オーダーデータを入力してください...\n\n例 (ASTM):\nH|\\^&|||LIS|||||||P|E 1394-97|20231201120000\nP|1||12345||Smith^John^A||19850315|M...\n\n例 (HL7):\nMSH|^~\\&|LIS|HOSPITAL|LAB|HOSPITAL|20231201120000...\nPID|1||12345^^^HOSPITAL^MR||Smith^John^A...\n\nCtrl + Enter で解析実行',
+                'button.parse': '⚡ 構文解析',
+                'button.clear': '🗑️ クリア',
+                'button.template': '📋 テンプレート',
+                'button.export.json': '💾 JSON出力',
+                'button.export.text': '📄 テキスト出力',
+                'tab.table': '📋 表形式',
+                'tab.json': '🔗 JSON',
+                'tab.tree': '🌳 構文木',
+                'welcome.title': '検査オーダーフォーマットエディタへようこそ',
+                'welcome.description': 'ASTMまたはHL7フォーマットのデータを入力して「構文解析」ボタンを押してください<br>テンプレートを使用して簡単に開始することもできます',
+                'segment.fields': 'フィールド',
+                'stats.segments': 'セグメント',
+                'stats.fields': 'フィールド',
+                'error.empty': '入力データが空です。ASTMまたはHL7フォーマットのデータを入力してください。',
+                'error.parse': '解析エラー'
+            },
+            en: {
+                'app.title': 'Medical Order Format Editor',
+                'app.subtitle': 'ASTM・HL7 Medical Order Format Parser and Editor Tool',
+                'language.current': 'English',
+                'input.format.auto': 'Auto Detect',
+                'input.format.astm': 'ASTM E1394',
+                'input.format.hl7': 'HL7 v2.x',
+                'input.placeholder': 'Enter medical order data...\n\nExample (ASTM):\nH|\\^&|||LIS|||||||P|E 1394-97|20231201120000\nP|1||12345||Smith^John^A||19850315|M...\n\nExample (HL7):\nMSH|^~\\&|LIS|HOSPITAL|LAB|HOSPITAL|20231201120000...\nPID|1||12345^^^HOSPITAL^MR||Smith^John^A...\n\nPress Ctrl + Enter to parse',
+                'button.parse': '⚡ Parse',
+                'button.clear': '🗑️ Clear',
+                'button.template': '📋 Template',
+                'button.export.json': '💾 Export JSON',
+                'button.export.text': '📄 Export Text',
+                'tab.table': '📋 Table',
+                'tab.json': '🔗 JSON',
+                'tab.tree': '🌳 Tree',
+                'welcome.title': 'Welcome to Medical Order Format Editor',
+                'welcome.description': 'Enter ASTM or HL7 format data and click "Parse" button<br>You can also use templates to get started quickly',
+                'segment.fields': 'fields',
+                'stats.segments': 'Segments',
+                'stats.fields': 'Fields',
+                'error.empty': 'Input data is empty. Please enter ASTM or HL7 format data.',
+                'error.parse': 'Parse Error'
+            }
+        };
+    }
+
+    toggleLanguage() {
+        this.currentLanguage = this.currentLanguage === 'ja' ? 'en' : 'ja';
+        localStorage.setItem('language', this.currentLanguage);
+        this.updateUI();
+        
+        // Re-render current result if available
+        if (this.currentResult) {
+            this.displayResults(this.currentResult);
+        } else {
+            this.showWelcomeMessage();
+        }
+    }
+
+    updateUI() {
+        const translations = this.translations[this.currentLanguage];
+        
+        // Update all elements with data-i18n attribute
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            if (translations[key]) {
+                element.innerHTML = translations[key];
+            }
+        });
+
+        // Update elements with data-i18n-placeholder attribute
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            if (translations[key]) {
+                element.placeholder = translations[key];
+            }
+        });
+
     }
 }
 
