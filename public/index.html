@@ -64,20 +64,11 @@
                     </button>
                 </div>
                 
-                <div id="result-container">
+                <div id="result-container" style="max-width: 100%; width: 100%; overflow: hidden;">
                     <div id="table-view" class="tab-content active" role="tabpanel" aria-labelledby="table-tab">
-                        <table id="result-table" aria-label="解析結果テーブル">
-                            <thead>
-                                <tr>
-                                    <th scope="col">セグメント・フィールド</th>
-                                    <th scope="col">値</th>
-                                    <th scope="col">説明</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                        <!-- Dynamic content will be inserted here -->
                     </div>
-                    <div id="json-view" class="tab-content" role="tabpanel" aria-labelledby="json-tab">
+                    <div id="json-view" class="tab-content" role="tabpanel" aria-labelledby="json-tab" style="overflow: hidden;">
                         <pre id="json-output" aria-label="JSON形式解析結果"></pre>
                     </div>
                     <div id="tree-view" class="tab-content" role="tabpanel" aria-labelledby="tree-tab">

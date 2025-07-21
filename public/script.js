@@ -1,13 +1,23 @@
 class MedicalOrderEditor {
     constructor() {
-        this.currentResult = null;
-        this.parser = new MedicalFormatParser();
-        this.init();
+        try {
+            this.currentResult = null;
+            this.parser = new MedicalFormatParser();
+            this.init();
+        } catch (error) {
+            console.error('Constructor error:', error);
+            throw error;
+        }
     }
 
     init() {
-        this.bindEvents();
-        this.showWelcomeMessage();
+        try {
+            this.bindEvents();
+            this.showWelcomeMessage();
+        } catch (error) {
+            console.error('Initialization error:', error);
+            throw error;
+        }
     }
 
     bindEvents() {
@@ -43,10 +53,10 @@ class MedicalOrderEditor {
     }
 
     showWelcomeMessage() {
-        const tableBody = document.querySelector('#result-table tbody');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="welcome-message">
+        const container = document.querySelector('#table-view');
+        if (container) {
+            container.innerHTML = `
+                <div class="welcome-message">
                     <div class="emoji">👋</div>
                     <div class="title">検査オーダーフォーマットエディタへようこそ</div>
                     <div class="description">
@@ -55,9 +65,9 @@ class MedicalOrderEditor {
                     </div>
                     <div class="shortcut">Ctrl + Enter</div>
                     <div style="font-size: 0.9rem; margin-top: 0.5rem;">で解析実行</div>
-                </td>
-            </tr>
-        `;
+                </div>
+            `;
+        }
     }
 
     parseData() {
@@ -105,51 +115,287 @@ class MedicalOrderEditor {
     }
 
     displayTableView(displayData) {
-        const tableBody = document.querySelector('#result-table tbody');
+        const container = document.querySelector('#table-view');
         
         if (!displayData || displayData.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="welcome-message">
-                        <div class="emoji">📭</div>
-                        <div class="title">解析結果がありません</div>
-                        <div class="description">有効なASTMまたはHL7データを入力してください</div>
-                    </td>
-                </tr>
+            container.innerHTML = `
+                <div class="welcome-message">
+                    <div class="emoji">📭</div>
+                    <div class="title">解析結果がありません</div>
+                    <div class="description">有効なASTMまたはHL7データを入力してください</div>
+                </div>
             `;
             return;
         }
 
-        const rows = displayData.map(item => `
-            <tr>
-                <td>
-                    <div><strong>${this.escapeHtml(item.segment)}</strong></div>
-                    <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.25rem;">
-                        Line ${item.lineNumber}
-                    </div>
-                </td>
-                <td>
-                    <div style="font-weight: 600; color: var(--blue-primary); margin-bottom: 0.25rem;">
-                        ${this.escapeHtml(item.field)}
-                    </div>
-                    <div style="font-family: 'SF Mono', 'Monaco', monospace; background: var(--pale-blue); 
-                               padding: 0.5rem; border-radius: 6px; margin-top: 0.25rem; 
-                               border-left: 3px solid var(--blue-primary); font-size: 0.9rem;">
-                        ${this.escapeHtml(item.value)}
-                    </div>
-                </td>
-                <td style="font-size: 0.9em; color: var(--text-secondary);">
-                    ${this.escapeHtml(item.description)}
-                </td>
-            </tr>
-        `).join('');
+        // Group data by segments
+        const segments = this.groupDataBySegment(displayData);
+        
+        container.innerHTML = `
+            <div class="segments-container">
+                ${segments.map((segment, index) => this.renderSegmentCard(segment, index)).join('')}
+            </div>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-number">${segments.length}</span>
+                    <span class="stat-label">セグメント</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${displayData.length}</span>
+                    <span class="stat-label">フィールド</span>
+                </div>
+            </div>
+        `;
 
-        tableBody.innerHTML = rows;
+        // Add event listeners for collapse functionality
+        this.addCollapseEventListeners();
+    }
+
+    groupDataBySegment(displayData) {
+        const segmentMap = new Map();
+        
+        displayData.forEach(item => {
+            const segmentKey = `${item.segment}-${item.lineNumber}`;
+            if (!segmentMap.has(segmentKey)) {
+                segmentMap.set(segmentKey, {
+                    segment: item.segment,
+                    lineNumber: item.lineNumber,
+                    fields: []
+                });
+            }
+            segmentMap.get(segmentKey).fields.push(item);
+        });
+        
+        return Array.from(segmentMap.values()).sort((a, b) => a.lineNumber - b.lineNumber);
+    }
+
+    renderSegmentCard(segment, index) {
+        const segmentId = `segment-${index}`;
+        const isExpanded = index < 3; // 最初の3つのセグメントを展開状態で表示
+        const collapseClass = isExpanded ? '' : 'collapsed';
+        
+        return `
+            <div class="segment-card ${collapseClass}" data-segment-id="${segmentId}">
+                <div class="segment-header" 
+                     role="button" 
+                     tabindex="0" 
+                     aria-expanded="${isExpanded}"
+                     title="クリックして${isExpanded ? '折りたたむ' : '展開する'}">
+                    <div class="segment-info">
+                        <div class="segment-title">
+                            <span class="segment-icon">${this.getSegmentIcon(segment.segment)}</span>
+                            <span class="segment-name">${this.escapeHtml(segment.segment)}</span>
+                            <span class="segment-line">Line ${segment.lineNumber}</span>
+                        </div>
+                        <div class="segment-meta">
+                            <span class="field-count">${segment.fields.length} フィールド</span>
+                        </div>
+                    </div>
+                    <div class="collapse-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="segment-content ${isExpanded ? 'expanded' : ''}" 
+                     aria-hidden="${!isExpanded}">
+                    <div class="fields-grid">
+                        ${segment.fields.map(field => this.renderFieldCard(field)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderFieldCard(field) {
+        const hasDescription = field.description && 
+                              field.description !== 'Standard field' && 
+                              field.description !== 'Standard ASTM field' && 
+                              field.description !== 'Standard HL7 field';
+        
+        return `
+            <div class="field-card">
+                <div class="field-header">
+                    <div class="field-name">${this.escapeHtml(field.field)}</div>
+                    ${field.index ? `<div class="field-index">#${field.index}</div>` : ''}
+                </div>
+                <div class="field-value">
+                    <code class="field-code">${this.escapeHtml(field.value)}</code>
+                </div>
+                ${hasDescription ? `
+                    <div class="field-description">
+                        <span class="description-icon">💡</span>
+                        ${this.escapeHtml(field.description)}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    getSegmentIcon(segmentName) {
+        const icons = {
+            'H (Header)': '📋',
+            'P (Patient Information)': '👤',
+            'O (Test Order)': '🧪',
+            'R (Result)': '📊',
+            'L (Terminator)': '🔚',
+            'MSH (Message Header)': '📨',
+            'PID (Patient Identification)': '🆔',
+            'ORC (Common Order)': '📝',
+            'OBR (Observation Request)': '🔬',
+            'OBX (Observation/Result)': '📈',
+            'NTE (Notes and Comments)': '📝',
+            'EVN (Event Type)': '⚡',
+            'PV1 (Patient Visit)': '🏥'
+        };
+        
+        // Check for exact matches first
+        if (icons[segmentName]) return icons[segmentName];
+        
+        // Check for partial matches
+        const segmentType = segmentName.split(' ')[0];
+        const fallbackIcons = {
+            'H': '📋', 'P': '👤', 'O': '🧪', 'R': '📊', 'L': '🔚',
+            'MSH': '📨', 'PID': '🆔', 'ORC': '📝', 'OBR': '🔬', 
+            'OBX': '📈', 'NTE': '📝', 'EVN': '⚡', 'PV1': '🏥'
+        };
+        
+        return fallbackIcons[segmentType] || '📄';
+    }
+
+    addCollapseEventListeners() {
+        // Remove existing event listeners to avoid duplicates
+        const existingControls = document.querySelector('.table-controls');
+        if (existingControls) {
+            existingControls.remove();
+        }
+
+        // Add expand/collapse all buttons
+        const tableView = document.querySelector('#table-view');
+        if (tableView) {
+            const controlsHtml = `
+                <div class="table-controls">
+                    <button class="control-btn" id="expand-all" type="button">
+                        📂 すべて展開
+                    </button>
+                    <button class="control-btn" id="collapse-all" type="button">
+                        📁 すべて折りたたむ
+                    </button>
+                </div>
+            `;
+            tableView.insertAdjacentHTML('afterbegin', controlsHtml);
+            
+            // Add event listeners with error handling
+            try {
+                const expandBtn = document.getElementById('expand-all');
+                const collapseBtn = document.getElementById('collapse-all');
+                
+                if (expandBtn) {
+                    expandBtn.addEventListener('click', () => {
+                        document.querySelectorAll('.segment-card').forEach(card => {
+                            card.classList.remove('collapsed');
+                            const content = card.querySelector('.segment-content');
+                            const header = card.querySelector('.segment-header');
+                            
+                            if (content) {
+                                content.classList.add('expanded');
+                            }
+                            if (header) {
+                                header.setAttribute('aria-expanded', 'true');
+                            }
+                        });
+                    });
+                }
+                
+                if (collapseBtn) {
+                    collapseBtn.addEventListener('click', () => {
+                        document.querySelectorAll('.segment-card').forEach(card => {
+                            card.classList.add('collapsed');
+                            const content = card.querySelector('.segment-content');
+                            const header = card.querySelector('.segment-header');
+                            
+                            if (content) {
+                                content.classList.remove('expanded');
+                            }
+                            if (header) {
+                                header.setAttribute('aria-expanded', 'false');
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error setting up control buttons:', error);
+            }
+        }
+
+        // Set up segment headers with error handling
+        try {
+            document.querySelectorAll('.segment-header').forEach(header => {
+                // Remove existing event listeners by cloning
+                const newHeader = header.cloneNode(true);
+                header.parentNode.replaceChild(newHeader, header);
+                
+                // Set up accessibility attributes
+                newHeader.setAttribute('tabindex', '0');
+                newHeader.setAttribute('role', 'button');
+                newHeader.setAttribute('aria-expanded', !newHeader.parentElement.classList.contains('collapsed'));
+                
+                // Add event listeners
+                newHeader.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.toggleSegment(newHeader);
+                    }
+                });
+                
+                newHeader.addEventListener('click', () => {
+                    this.toggleSegment(newHeader);
+                });
+            });
+        } catch (error) {
+            console.error('Error setting up segment headers:', error);
+        }
+    }
+
+    toggleSegment(header) {
+        try {
+            const card = header.parentElement;
+            if (card) {
+                const content = card.querySelector('.segment-content');
+                const isCollapsed = card.classList.toggle('collapsed');
+                
+                if (content) {
+                    if (isCollapsed) {
+                        content.classList.remove('expanded');
+                    } else {
+                        content.classList.add('expanded');
+                    }
+                }
+                
+                header.setAttribute('aria-expanded', !isCollapsed);
+            }
+        } catch (error) {
+            console.error('Error toggling segment:', error);
+        }
     }
 
     displayJsonView(result) {
         const jsonOutput = document.getElementById('json-output');
-        jsonOutput.textContent = JSON.stringify(result, null, 2);
+        if (jsonOutput) {
+            try {
+                // Format JSON with 2-space indentation for better mobile readability
+                const formattedJson = JSON.stringify(result, null, 2);
+                jsonOutput.textContent = formattedJson;
+                
+                // Ensure the element is properly constrained
+                jsonOutput.style.maxWidth = '100%';
+                jsonOutput.style.overflowX = 'auto';
+                jsonOutput.style.whiteSpace = 'pre';
+            } catch (error) {
+                console.error('Error displaying JSON:', error);
+                jsonOutput.textContent = 'JSON表示エラーが発生しました';
+            }
+        }
     }
 
     displayTreeView(result) {
@@ -414,39 +660,57 @@ class MedicalOrderEditor {
     }
 
     clearAll() {
-        document.getElementById('order-input').value = '';
-        document.getElementById('format-selector').value = 'auto';
-        document.querySelector('#result-table tbody').innerHTML = '';
-        document.getElementById('json-output').textContent = '';
-        document.getElementById('tree-container').innerHTML = '';
-        this.currentResult = null;
-        this.showWelcomeMessage();
+        try {
+            document.getElementById('order-input').value = '';
+            document.getElementById('format-selector').value = 'auto';
+            
+            // Clear all result containers
+            const tableView = document.getElementById('table-view');
+            if (tableView) {
+                tableView.innerHTML = '';
+            }
+            
+            const jsonOutput = document.getElementById('json-output');
+            if (jsonOutput) {
+                jsonOutput.textContent = '';
+            }
+            
+            const treeContainer = document.getElementById('tree-container');
+            if (treeContainer) {
+                treeContainer.innerHTML = '';
+            }
+            
+            this.currentResult = null;
+            this.showWelcomeMessage();
+        } catch (error) {
+            console.error('Error clearing data:', error);
+        }
     }
 
     showLoading() {
-        const tableBody = document.querySelector('#result-table tbody');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="loading-message">
+        const container = document.querySelector('#table-view');
+        if (container) {
+            container.innerHTML = `
+                <div class="loading-message">
                     <div class="spinner">⚡</div>
                     <div class="title">解析中...</div>
                     <div class="description">データを処理しています</div>
-                </td>
-            </tr>
-        `;
+                </div>
+            `;
+        }
     }
 
     showError(message) {
-        const tableBody = document.querySelector('#result-table tbody');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="error-message">
+        const container = document.querySelector('#table-view');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-message">
                     <div class="emoji">⚠️</div>
                     <div class="title">エラー</div>
                     <div class="description">${this.escapeHtml(message)}</div>
-                </td>
-            </tr>
-        `;
+                </div>
+            `;
+        }
     }
 
     showWarnings(errors) {
@@ -488,17 +752,82 @@ class MedicalOrderEditor {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        new MedicalOrderEditor();
+        // Check if required elements exist
+        const requiredElements = [
+            'parse-btn', 'clear-btn', 'load-template', 
+            'export-json', 'export-text', 'order-input', 
+            'format-selector', 'table-view', 'json-output', 'tree-view'
+        ];
+        
+        const missingElements = requiredElements.filter(id => !document.getElementById(id));
+        
+        if (missingElements.length > 0) {
+            throw new Error(`Required elements missing: ${missingElements.join(', ')}`);
+        }
+
+        // Check if MedicalFormatParser is available
+        if (typeof MedicalFormatParser === 'undefined') {
+            throw new Error('MedicalFormatParser is not loaded. Please check parsers.js file.');
+        }
+
+        // Check if TEMPLATE_DATA is available
+        if (typeof TEMPLATE_DATA === 'undefined') {
+            throw new Error('TEMPLATE_DATA is not loaded. Please check parsers.js file.');
+        }
+
+        // Initialize the application
+        const app = new MedicalOrderEditor();
+        
+        // Global error handler for unhandled errors
+        window.addEventListener('error', (event) => {
+            console.error('Runtime error:', event.error);
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+        
+        console.log('Medical Order Editor initialized successfully');
+        
     } catch (error) {
         console.error('Failed to initialize Medical Order Editor:', error);
+        
+        // More detailed error message
+        const errorDetails = error.stack || error.message || 'Unknown error';
+        
         // Fallback error display
         document.body.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: #dc2626;">
-                <h1>🚨 アプリケーションの初期化に失敗しました</h1>
-                <p>ページを再読み込みしてください。問題が続く場合は、ブラウザのコンソールをご確認ください。</p>
-                <button onclick="location.reload()" style="padding: 1rem 2rem; margin-top: 1rem; 
-                        background: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <div style="max-width: 800px; margin: 2rem auto; padding: 2rem; text-align: center; 
+                        color: #dc2626; background: #fef2f2; border: 2px solid #fecaca; 
+                        border-radius: 12px; font-family: system-ui;">
+                <h1 style="font-size: 2rem; margin-bottom: 1rem;">🚨 アプリケーションの初期化に失敗しました</h1>
+                
+                <div style="margin: 1.5rem 0; padding: 1rem; background: white; border-radius: 8px; 
+                           text-align: left; font-family: monospace; font-size: 0.9rem; 
+                           border: 1px solid #e5e7eb; max-height: 200px; overflow-y: auto;">
+                    <strong>エラー詳細:</strong><br>
+                    ${errorDetails.replace(/\n/g, '<br>')}
+                </div>
+                
+                <p style="margin: 1rem 0; color: #6b7280;">
+                    以下の手順をお試しください：<br>
+                    1. ページを再読み込みしてください<br>
+                    2. ブラウザのキャッシュをクリアしてください<br>
+                    3. 問題が続く場合は、ブラウザの開発者ツール（F12）でコンソールをご確認ください
+                </p>
+                
+                <button onclick="location.reload()" 
+                        style="padding: 1rem 2rem; margin: 1rem; background: #2196F3; 
+                               color: white; border: none; border-radius: 8px; cursor: pointer; 
+                               font-size: 1rem; font-weight: 600;">
                     ページを再読み込み
+                </button>
+                
+                <button onclick="window.location.href = window.location.href.split('?')[0]" 
+                        style="padding: 1rem 2rem; margin: 1rem; background: #6b7280; 
+                               color: white; border: none; border-radius: 8px; cursor: pointer; 
+                               font-size: 1rem; font-weight: 600;">
+                    キャッシュをクリアして再読み込み
                 </button>
             </div>
         `;
