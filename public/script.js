@@ -387,10 +387,16 @@ class MedicalOrderEditor {
                 const formattedJson = JSON.stringify(result, null, 2);
                 jsonOutput.textContent = formattedJson;
                 
-                // Ensure the element is properly constrained
+                // Force word-wrapping styles for long strings
                 jsonOutput.style.maxWidth = '100%';
+                jsonOutput.style.width = '100%';
+                jsonOutput.style.boxSizing = 'border-box';
                 jsonOutput.style.overflowX = 'auto';
-                jsonOutput.style.whiteSpace = 'pre';
+                jsonOutput.style.overflowY = 'auto';
+                jsonOutput.style.whiteSpace = 'pre-wrap';
+                jsonOutput.style.wordBreak = 'break-word';
+                jsonOutput.style.wordWrap = 'break-word';
+                jsonOutput.style.overflowWrap = 'break-word';
             } catch (error) {
                 console.error('Error displaying JSON:', error);
                 jsonOutput.textContent = 'JSON表示エラーが発生しました';
