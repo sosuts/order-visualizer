@@ -385,7 +385,10 @@ class MedicalOrderEditor {
             try {
                 // Format JSON with 2-space indentation for better mobile readability
                 const formattedJson = JSON.stringify(result, null, 2);
-                jsonOutput.textContent = formattedJson;
+                
+                // Apply syntax highlighting
+                const highlightedJson = this.highlightJson(formattedJson);
+                jsonOutput.innerHTML = highlightedJson;
                 
                 // Force word-wrapping styles for long strings
                 jsonOutput.style.maxWidth = '100%';
@@ -402,6 +405,30 @@ class MedicalOrderEditor {
                 jsonOutput.textContent = 'JSON表示エラーが発生しました';
             }
         }
+    }
+
+    highlightJson(json) {
+        // Escape HTML first to prevent XSS
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        // JSON syntax highlighting regex patterns
+        return json
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/(".*?")(\s*:\s*)/g, '<span class="json-key">$1</span><span class="json-punctuation">$2</span>') // Keys
+            .replace(/:\s*(".*?")/g, ': <span class="json-string">$1</span>') // String values
+            .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>') // Numbers
+            .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>') // Booleans
+            .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>') // Null
+            .replace(/([{}])/g, '<span class="json-bracket">$1</span>') // Braces
+            .replace(/([[\\]])/g, '<span class="json-bracket">$1</span>') // Brackets
+            .replace(/(,)/g, '<span class="json-punctuation">$1</span>') // Commas
+            .replace(/^(\s*)"([^"]+)"/gm, '$1<span class="json-property">"$2"</span>'); // Properties at start of lines
     }
 
     displayTreeView(result) {

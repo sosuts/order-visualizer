@@ -683,6 +683,42 @@ button:focus {
     display: block;
 }
 
+/* JSON Syntax Highlighting */
+.json-key {
+    color: #79c0ff;
+    font-weight: 600;
+}
+
+.json-string {
+    color: #a5d6ff;
+}
+
+.json-number {
+    color: #79c0ff;
+}
+
+.json-boolean {
+    color: #ffab70;
+}
+
+.json-null {
+    color: #ff7b72;
+    font-style: italic;
+}
+
+.json-punctuation {
+    color: #e6edf3;
+}
+
+.json-bracket {
+    color: #ffa657;
+    font-weight: bold;
+}
+
+.json-property {
+    color: #79c0ff;
+}
+
 /* Tree container */
 #tree-container {
     border: 2px solid var(--gray-200);
